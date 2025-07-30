@@ -34,29 +34,39 @@ Also, you can use YuanShen.
 ## config.json
 
 This file must be in the same folder as the `.exe`.
-It will be auto-generated on first run if missing.
 
 ```json
 {
-  "old_ver": "5.5.0",
-  "new_ver": "5.6.0",
+  "old_ver": "5.6.0",
+  "new_ver": "5.7.0",
   "mode": 0,
   "max_threads": 4,
   "keep_source_folder": false,
-  "log_level": "DEBUG"
+  "log_level": "DEBUG",
+  "game": true,
+  "audio_en-us": false,
+  "audio_ja-jp": true,
+  "audio_ko-kr": false,
+  "audio_zh-cn": false
 }
 ```
 
-| Parameters | Type | Description |
-|----------------------|---------|-------------|
-| `old_ver`            | string  | Source version (folder must exist) |
-| `new_ver`            | string  | Target version (folder must exist) |
-| `mode`               | int     | 0 = sequential, 1 = parallel |
-| `max_threads`        | int     | Number of worker threads (1–CPU core count) |
-| `keep_source_folder` | bool    | Keep old & new game folders after patching |
-| `log_level`          | string  | DEBUG, INFO, WARN, ERROR, FATAL |
+| Parameter             | Type    | Description                                                                 |
+|-----------------------|---------|-----------------------------------------------------------------------------|
+| `old_ver`             | string  | Old version (folder must exist, e.g. `GenshinImpact_5.6.0`)                 |
+| `new_ver`             | string  | New version (folder must exist, e.g. `GenshinImpact_5.7.0`)                 |
+| `mode`                | int     | 0 = sequential execution, 1 = parallel execution                            |
+| `max_threads`         | int     | Maximum worker threads (1 to number of CPU cores)                           |
+| `keep_source_folder`  | bool    | If true, retains original version folders after patching                    |
+| `log_level`           | string  | One of: `"DEBUG"`, `"INFO"`, `"WARN"`, `"ERROR"`, `"FATAL"`, `"NONE"`       |
+| `game`                | bool    | If true, perform diffing for main game files                                |
+| `audio_en-us`         | bool    | If true, include English audio in the diff                                  |
+| `audio_ja-jp`         | bool    | If true, include Japanese audio in the diff                                 |
+| `audio_ko-kr`         | bool    | If true, include Korean audio in the diff                                   |
+| `audio_zh-cn`         | bool    | If true, include Chinese audio in the diff                                  |
 
-If the config is malformed or has invalid types, the program will terminate immediately.
+> If the config is missing, it will be created automatically with safe defaults.  
+> If the config is malformed or contains invalid values, the program will terminate with an error and hint.
 
 
 ## Usage

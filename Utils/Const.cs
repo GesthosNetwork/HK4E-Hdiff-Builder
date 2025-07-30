@@ -28,18 +28,22 @@ namespace HK4E.HdiffBuilder.Utils
         public static readonly Dictionary<string, string> AudioLanguages = new()
         {
             ["English(US)"] = "audio_en-us",
-            ["Japanese"] = "audio_ja-jp",
-            ["Korean"] = "audio_ko-kr",
-            ["Chinese"] = "audio_zh-cn"
+            ["Japanese"]    = "audio_ja-jp",
+            ["Korean"]      = "audio_ko-kr",
+            ["Chinese"]     = "audio_zh-cn"
         };
 
         public static readonly HashSet<string> VersionWhitelist = new()
         {
-            "0.7.0", "0.7.1", "1.0.1", "1.3.1", "1.3.2", "1.4.1", "1.5.1", "1.6.1", "4.0.1"
+            "0.7.0", "0.7.1", "1.0.1", "1.3.1", "1.3.2",
+            "1.4.1", "1.5.1", "1.6.1", "4.0.1"
         };
 
         public static string OldBase => $"{ActiveGameRoot}_{OldVer}";
         public static string NewBase => $"{ActiveGameRoot}_{NewVer}";
+
+        public static bool RunGameDiff = true;
+        public static readonly Dictionary<string, bool> RunAudioDiff = new();
 
         #nullable disable
         static Const()
@@ -48,12 +52,17 @@ namespace HK4E.HdiffBuilder.Utils
 
             var defaultConfig = new Dictionary<string, object>
             {
-                ["old_ver"] = "5.5.0",
-                ["new_ver"] = "5.6.0",
-                ["mode"] = 0,
-                ["max_threads"] = logicalCoreCount,
+                ["old_ver"]           = "5.5.0",
+                ["new_ver"]           = "5.6.0",
+                ["mode"]              = 0,
+                ["max_threads"]       = logicalCoreCount,
                 ["keep_source_folder"] = false,
-                ["log_level"] = "DEBUG"
+                ["log_level"]         = "DEBUG",
+                ["game"]              = true,
+                ["audio_en-us"]       = true,
+                ["audio_ja-jp"]       = true,
+                ["audio_ko-kr"]       = true,
+                ["audio_zh-cn"]       = true
             };
 
             if (!File.Exists(ConfigPath))
@@ -61,6 +70,18 @@ namespace HK4E.HdiffBuilder.Utils
                 var json = JsonSerializer.Serialize(defaultConfig, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(ConfigPath, json);
                 ConfigCreated = true;
+
+                LogLevel = "INFO";
+                Logger.Init();
+                Logger.Warning("config.json not found. Created with default values.");
+                Logger.Hint("Please check and edit config.json");
+
+                if (Environment.UserInteractive)
+                {
+                    Console.WriteLine("Press ENTER to exit...");
+                    Console.ReadLine();
+                }
+                Environment.Exit(0);
             }
 
             Dictionary<string, JsonElement> temp = null;
@@ -81,7 +102,7 @@ namespace HK4E.HdiffBuilder.Utils
                         validationErrors.Add("config.json is malformed. JSON content is null.");
                 }
             }
-            catch (Exception)
+            catch
             {
                 validationErrors.Add("config.json is malformed. JSON syntax is invalid.");
             }
@@ -89,7 +110,7 @@ namespace HK4E.HdiffBuilder.Utils
             LogLevel = temp != null && temp.TryGetValue("log_level", out var levelVal)
                 && levelVal.ValueKind == JsonValueKind.String
                 && !string.IsNullOrWhiteSpace(levelVal.GetString())
-                    ? levelVal.GetString()!.Trim().ToUpperInvariant()
+                    ? levelVal.GetString().Trim().ToUpperInvariant()
                     : "INFO";
 
             Logger.Init();
@@ -104,48 +125,7 @@ namespace HK4E.HdiffBuilder.Utils
             }
 
             var config = temp;
-
-            if (!config.TryGetValue("old_ver", out var oldVal) || oldVal.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(oldVal.GetString()))
-                validationErrors.Add("'old_ver' is missing or not a valid string.");
-            else
-                OldVer = oldVal.GetString().Trim();
-
-            if (!config.TryGetValue("new_ver", out var newVal) || newVal.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(newVal.GetString()))
-                validationErrors.Add("'new_ver' is missing or not a valid string.");
-            else
-                NewVer = newVal.GetString().Trim();
-
-            if (!config.TryGetValue("mode", out var modeVal) || modeVal.ValueKind != JsonValueKind.Number)
-                validationErrors.Add("'mode' is missing or not a valid number.");
-            else
-                Mode = modeVal.GetInt32();
-
-            if (!config.TryGetValue("max_threads", out var threadVal) || threadVal.ValueKind != JsonValueKind.Number)
-            {
-                validationErrors.Add("'max_threads' is missing or not a valid number.");
-            }
-            else
-            {
-                MaxThreads = threadVal.GetInt32();
-                if (MaxThreads < 1 || MaxThreads > Environment.ProcessorCount)
-                    validationErrors.Add($"'max_threads' must be an integer between 1 and {Environment.ProcessorCount}, based on your CPU.");
-            }
-
-            if (!config.TryGetValue("keep_source_folder", out var keepVal))
-            {
-                validationErrors.Add("'keep_source_folder' is missing.");
-            }
-            else if (keepVal.ValueKind != JsonValueKind.True && keepVal.ValueKind != JsonValueKind.False)
-            {
-                validationErrors.Add("'keep_source_folder' must be true or false (without quotes).");
-            }
-            else
-            {
-                KeepSourceFolder = keepVal.ValueKind == JsonValueKind.True;
-            }
-
-            if (Mode is not (0 or 1))
-                validationErrors.Add("'mode' must be 0 (sequential) or 1 (parallel).");
+            ReadConfigValues(config, validationErrors);
 
             if (validationErrors.Count == 0)
             {
@@ -167,7 +147,7 @@ namespace HK4E.HdiffBuilder.Utils
                 PauseExit();
             }
 
-            foreach (var i in Enumerable.Range(0, GameRootDirs.Length))
+            for (int i = 0; i < GameRootDirs.Length; i++)
             {
                 string oldBase = $"{GameRootDirs[i]}_{OldVer}";
                 string newBase = $"{GameRootDirs[i]}_{NewVer}";
@@ -186,6 +166,59 @@ namespace HK4E.HdiffBuilder.Utils
                 Logger.Hint($"Make sure one of these folders exist: {string.Join(", ", GameRootDirs.Select(x => $"{x}_{OldVer}"))}");
                 PauseExit();
             }
+
+            RunGameDiff = config.TryGetValue("game", out var gameVal) && gameVal.ValueKind == JsonValueKind.True;
+
+            foreach (var pair in AudioLanguages)
+            {
+                string key = pair.Value;
+                RunAudioDiff[pair.Key] = config.TryGetValue(key, out var val) && val.ValueKind == JsonValueKind.True;
+            }
+        }
+
+        private static void ReadConfigValues(Dictionary<string, JsonElement> config, List<string> errors)
+        {
+            if (!config.TryGetValue("old_ver", out var oldVal) || oldVal.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(oldVal.GetString()))
+                errors.Add("'old_ver' is missing or not a valid string.");
+            else
+                OldVer = oldVal.GetString().Trim();
+
+            if (!config.TryGetValue("new_ver", out var newVal) || newVal.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(newVal.GetString()))
+                errors.Add("'new_ver' is missing or not a valid string.");
+            else
+                NewVer = newVal.GetString().Trim();
+
+            if (!config.TryGetValue("mode", out var modeVal) || modeVal.ValueKind != JsonValueKind.Number)
+                errors.Add("'mode' is missing or not a valid number.");
+            else
+                Mode = modeVal.GetInt32();
+
+            if (!config.TryGetValue("max_threads", out var threadVal) || threadVal.ValueKind != JsonValueKind.Number)
+            {
+                errors.Add("'max_threads' is missing or not a valid number.");
+            }
+            else
+            {
+                MaxThreads = threadVal.GetInt32();
+                if (MaxThreads < 1 || MaxThreads > Environment.ProcessorCount)
+                    errors.Add($"'max_threads' must be an integer between 1 and {Environment.ProcessorCount}, based on your CPU.");
+            }
+
+            if (!config.TryGetValue("keep_source_folder", out var keepVal))
+            {
+                errors.Add("'keep_source_folder' is missing.");
+            }
+            else if (keepVal.ValueKind is not JsonValueKind.True and not JsonValueKind.False)
+            {
+                errors.Add("'keep_source_folder' must be true or false (without quotes).");
+            }
+            else
+            {
+                KeepSourceFolder = keepVal.ValueKind == JsonValueKind.True;
+            }
+
+            if (Mode is not (0 or 1))
+                errors.Add("'mode' must be 0 (sequential) or 1 (parallel).");
         }
 
         private static Tuple<int, int, int> ValidateVersion(string ver, List<string> errors)
@@ -229,22 +262,19 @@ namespace HK4E.HdiffBuilder.Utils
                     errors.Add($"Invalid version '{ver}' not allowed.");
             }
 
-            if (!(x == 0 && y == 9))
-            {
-                if (!new HashSet<int> { 0, 50, 51, 52, 53, 54, 55 }.Contains(z))
-                    errors.Add($"Invalid version '{ver}' not allowed.");
-            }
+            if (!(x == 0 && y == 9) && !new HashSet<int> { 0, 50, 51, 52, 53, 54, 55 }.Contains(z))
+                errors.Add($"Invalid version '{ver}' not allowed.");
 
             return Tuple.Create(x, y, z);
         }
 
         private static int CompareTuple(Tuple<int, int, int> a, Tuple<int, int, int> b)
         {
-            int cmp1 = a.Item1.CompareTo(b.Item1);
-            if (cmp1 != 0) return cmp1;
+            int cmp = a.Item1.CompareTo(b.Item1);
+            if (cmp != 0) return cmp;
 
-            int cmp2 = a.Item2.CompareTo(b.Item2);
-            if (cmp2 != 0) return cmp2;
+            cmp = a.Item2.CompareTo(b.Item2);
+            if (cmp != 0) return cmp;
 
             return a.Item3.CompareTo(b.Item3);
         }
@@ -256,7 +286,6 @@ namespace HK4E.HdiffBuilder.Utils
                 Console.WriteLine("Press Enter to exit...");
                 Console.ReadLine();
             }
-
             Environment.Exit(1);
         }
 

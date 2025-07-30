@@ -1,10 +1,21 @@
 using System;
+using System.Reflection;
 
 namespace HK4E.HdiffBuilder.Utils
 {
     public static class WindowUtils
     {
-        public static readonly string Y = "HK4E Hdiff Builder v1.0 - Copyright © GesthosNetwork";
+        public static string Y
+        {
+            get
+            {
+                string version = Assembly.GetExecutingAssembly()
+                      .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                       ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString()
+                       ?? "Unknown";
+                return $"HK4E Hdiff Builder v{version} - Copyright © GesthosNetwork";
+            }
+        }
 
         public static void AdjustConsoleWidth()
         {

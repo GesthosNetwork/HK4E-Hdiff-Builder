@@ -200,22 +200,29 @@ namespace HK4E.HdiffBuilder.Core
             }
 
             Logger.Info("HDIFF .pck process started...");
+            var start = DateTime.Now;
 
-            foreach (var gameDir in Const.GameDataDirs)
+            if (Const.RunGameDiff)
             {
-                var root1 = Path.Combine(updateFolder, gameDir, "StreamingAssets", "AudioAssets");
-                var old1 = Path.Combine(Const.OldBase, gameDir, "StreamingAssets", "AudioAssets");
-                if (Directory.Exists(root1))
-                    ScanAndProcess(root1, old1, $"{gameDir}/StreamingAssets/AudioAssets", updateFolder, root1);
+                foreach (var gameDir in Const.GameDataDirs)
+                {
+                    var root1 = Path.Combine(updateFolder, gameDir, "StreamingAssets", "AudioAssets");
+                    var old1 = Path.Combine(Const.OldBase, gameDir, "StreamingAssets", "AudioAssets");
+                    if (Directory.Exists(root1))
+                        ScanAndProcess(root1, old1, $"{gameDir}/StreamingAssets/AudioAssets", updateFolder, root1);
 
-                var root2 = Path.Combine(updateFolder, gameDir, "StreamingAssets", "Audio", "GeneratedSoundBanks", "Windows");
-                var old2 = Path.Combine(Const.OldBase, gameDir, "StreamingAssets", "Audio", "GeneratedSoundBanks", "Windows");
-                if (Directory.Exists(root2))
-                    ScanAndProcess(root2, old2, $"{gameDir}/StreamingAssets/Audio/GeneratedSoundBanks/Windows", updateFolder, root2);
+                    var root2 = Path.Combine(updateFolder, gameDir, "StreamingAssets", "Audio", "GeneratedSoundBanks", "Windows");
+                    var old2 = Path.Combine(Const.OldBase, gameDir, "StreamingAssets", "Audio", "GeneratedSoundBanks", "Windows");
+                    if (Directory.Exists(root2))
+                        ScanAndProcess(root2, old2, $"{gameDir}/StreamingAssets/Audio/GeneratedSoundBanks/Windows", updateFolder, root2);
+                }
             }
 
             foreach (var lang in Const.AudioLanguages.Keys)
             {
+                if (!Const.RunAudioDiff.TryGetValue(lang, out bool shouldRun) || !shouldRun)
+                    continue;
+
                 string updBase = outputAudio[lang];
                 string newAudioDir = GetActualAudioDir(Const.NewBase, lang, out string gameDataDir, out bool isAssets);
 
@@ -234,7 +241,8 @@ namespace HK4E.HdiffBuilder.Core
                 ScanAndProcess(updateRoot, oldAudioDir, remotePrefix, updBase, updateRoot);
             }
 
-            Logger.Finished($"All Hdiff processes completed.\n");
+            var elapsed = DateTime.Now - start;
+            Logger.Finished($"All Hdiff processes completed in {elapsed:hh\\:mm\\:ss}\n");
         }
     }
 }

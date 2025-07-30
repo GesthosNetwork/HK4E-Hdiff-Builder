@@ -8,6 +8,7 @@ namespace HK4E.HdiffBuilder.Utils
     public static class Logger
     {
         private static readonly object _lock = new();
+        private static bool DisableFileLogging = false;
 
         public static void Init()
         {
@@ -17,17 +18,24 @@ namespace HK4E.HdiffBuilder.Utils
             string logFilePath = $"{baseName}.txt";
 
             string? levelStr = Const.LogLevel?.Trim().ToUpperInvariant();
+            DisableFileLogging = (levelStr == "NONE");
+
             LogEventLevel minimumLevel = ParseLogLevel(levelStr);
 
-            Log.Logger = new LoggerConfiguration()
+            var config = new LoggerConfiguration()
                 .MinimumLevel.Is(minimumLevel)
-                .Enrich.FromLogContext()
-                .WriteTo.File(
+                .Enrich.FromLogContext();
+
+            if (!DisableFileLogging)
+            {
+                config = config.WriteTo.File(
                     path: logFilePath,
                     outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss}] [{Tag}] {Message:lj}{NewLine}",
                     restrictedToMinimumLevel: minimumLevel
-                )
-                .CreateLogger();
+                );
+            }
+
+            Log.Logger = config.CreateLogger();
 
             if (!IsRecognizedLogLevel(levelStr))
                 Warning($"Unknown log_level '{levelStr}', defaulting to INFO.");
@@ -87,6 +95,7 @@ namespace HK4E.HdiffBuilder.Utils
                 "FAIL"      => LogEventLevel.Error,
                 "ERROR"     => LogEventLevel.Error,
                 "FATAL"     => LogEventLevel.Fatal,
+                "NONE"      => LogEventLevel.Verbose,
                 _           => LogEventLevel.Information
             };
         }
@@ -96,14 +105,12 @@ namespace HK4E.HdiffBuilder.Utils
             return level is "TRACE" or "DEBUG" or "INFO" or "NOTICE" or "HINT"
                          or "DONE" or "UPDATE" or "FINISHED"
                          or "SKIP" or "WARN" or "WARNING"
-                         or "FAIL" or "ERROR" or "FATAL";
+                         or "FAIL" or "ERROR" or "FATAL"
+                         or "NONE";
         }
 
         private static void LogWithTag(string tag, string message, LogEventLevel level, ConsoleColor color)
         {
-            if (!Log.IsEnabled(level))
-                return;
-
             lock (_lock)
             {
                 var originalColor = Console.ForegroundColor;
@@ -112,7 +119,10 @@ namespace HK4E.HdiffBuilder.Utils
                 Console.ForegroundColor = originalColor;
                 Console.WriteLine(message);
 
-                Log.ForContext("Tag", tag).Write(level, "{Message}", message);
+                if (!DisableFileLogging && Log.IsEnabled(level))
+                {
+                    Log.ForContext("Tag", tag).Write(level, "{Message}", message);
+                }
             }
         }
 

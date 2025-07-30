@@ -25,19 +25,44 @@ namespace HK4E.HdiffBuilder.Utils
             "SDK", "LauncherPlugins", "blob_storage", "ldiff"
         };
 
+        private static bool VersionIsAtLeast(string ver, int x, int y, int z)
+        {
+            var parts = ver.Split('.');
+            if (parts.Length != 3) return true;
+
+            if (!int.TryParse(parts[0], out int vx)) return true;
+            if (!int.TryParse(parts[1], out int vy)) return true;
+            if (!int.TryParse(parts[2], out int vz)) return true;
+
+            if (vx > x) return true;
+            if (vx < x) return false;
+            if (vy > y) return true;
+            if (vy < y) return false;
+            return vz >= z;
+        }
+
         public static bool Ignore(string path)
         {
             string basename = Path.GetFileName(path);
             string ext = Path.GetExtension(basename);
             string[] parts = path.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
 
-            if (ext == ".pck" && (
-                basename.StartsWith("SFX_") ||
-                basename.StartsWith("Music_") ||
-                basename.StartsWith("VO_")))
+            if (ext == ".pck")
             {
-                Logger.Skip($"Ignored file by prefix rule: {basename}");
-                return true;
+                if (basename.StartsWith("SFX_") || basename.StartsWith("Music_"))
+                {
+                    Logger.Skip($"Ignored file by prefix rule: {basename}");
+                    return true;
+                }
+
+                if (basename.StartsWith("VO_"))
+                {
+                    if (VersionIsAtLeast(Const.NewVer, 2, 7, 0))
+                    {
+                        Logger.Skip($"Ignored file by prefix rule: {basename}");
+                        return true;
+                    }
+                }
             }
 
             if (IgnoreFiles.Contains(basename))

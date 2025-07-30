@@ -20,14 +20,28 @@ namespace HK4E.HdiffBuilder.Core
             var maxThreads = MaxThreads;
             var keepSourceFolder = KeepSourceFolder;
 
-            var folders = new Dictionary<string, string>
+            var folders = new Dictionary<string, string>();
+
+            if (RunGameDiff)
             {
-                [$"game_{oldVer}_{newVer}_hdiff"] = $"game_{oldVer}_{newVer}_hdiff.7z",
-                [$"audio_en-us_{oldVer}_{newVer}_hdiff"] = $"audio_en-us_{oldVer}_{newVer}_hdiff.7z",
-                [$"audio_ja-jp_{oldVer}_{newVer}_hdiff"] = $"audio_ja-jp_{oldVer}_{newVer}_hdiff.7z",
-                [$"audio_ko-kr_{oldVer}_{newVer}_hdiff"] = $"audio_ko-kr_{oldVer}_{newVer}_hdiff.7z",
-                [$"audio_zh-cn_{oldVer}_{newVer}_hdiff"] = $"audio_zh-cn_{oldVer}_{newVer}_hdiff.7z",
-            };
+                string gameFolder = $"game_{oldVer}_{newVer}_hdiff";
+                folders[gameFolder] = gameFolder + ".7z";
+            }
+
+            foreach (var pair in AudioLanguages)
+            {
+                if (!RunAudioDiff.TryGetValue(pair.Key, out bool enabled) || !enabled)
+                    continue;
+
+                string folderName = $"{pair.Value}_{oldVer}_{newVer}_hdiff";
+                folders[folderName] = folderName + ".7z";
+            }
+
+            if (folders.Count == 0)
+            {
+                Logger.Warning("No diff folders selected for compression (based on config.json).");
+                return;
+            }
 
             string exe = SevenZip.Extract();
             var baseCommand = new List<string>

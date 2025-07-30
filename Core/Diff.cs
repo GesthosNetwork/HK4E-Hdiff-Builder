@@ -216,17 +216,24 @@ namespace HK4E.HdiffBuilder.Core
 
             if (Const.Mode == 1)
             {
-                Thread tGame = new Thread(GameDiff);
-                tGame.Start();
-                threads.Add(tGame);
+                if (Const.RunGameDiff)
+                {
+                    Thread tGame = new Thread(GameDiff);
+                    tGame.Start();
+                    threads.Add(tGame);
+                }
 
                 foreach (var entry in Const.AudioLanguages)
                 {
                     string langKey = entry.Key;
                     string folderTag = entry.Value;
-                    Thread t = new Thread(() => AudioDiff(langKey, folderTag));
-                    t.Start();
-                    threads.Add(t);
+
+                    if (Const.RunAudioDiff.TryGetValue(langKey, out bool enabled) && enabled)
+                    {
+                        Thread t = new Thread(() => AudioDiff(langKey, folderTag));
+                        t.Start();
+                        threads.Add(t);
+                    }
                 }
 
                 foreach (var t in threads)
@@ -234,9 +241,17 @@ namespace HK4E.HdiffBuilder.Core
             }
             else
             {
-                GameDiff();
+                if (Const.RunGameDiff)
+                    GameDiff();
+
                 foreach (var entry in Const.AudioLanguages)
-                    AudioDiff(entry.Key, entry.Value);
+                {
+                    string langKey = entry.Key;
+                    string folderTag = entry.Value;
+
+                    if (Const.RunAudioDiff.TryGetValue(langKey, out bool enabled) && enabled)
+                        AudioDiff(langKey, folderTag);
+                }
             }
 
             var elapsed = DateTime.Now - start;

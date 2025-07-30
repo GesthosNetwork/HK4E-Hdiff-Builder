@@ -18,22 +18,18 @@ namespace HK4E.HdiffBuilder
             {
                 WindowUtils.AdjustConsoleWidth();
 
-                if (Const.ConfigCreated)
-                {
-                    Logger.Warning("config.json not found. Created with default values.");
-                    Logger.Hint("Please check and edit config.json");
-                    Exit(0);
-                }
-
                 if (!Const.ValidateDirs())
                     Exit(1);
+
+                var start = DateTime.Now;
 
                 Diff.RunDiff();
                 Delete.RunDel();
                 Hdiff.RunHdiff();
                 Zip.RunZip();
 
-                Logger.Finished("All steps completed successfully in {elapsed:hh\\:mm\\:ss}");
+                var elapsed = DateTime.Now - start;
+                Logger.Finished($"All steps completed successfully in {elapsed:hh\\:mm\\:ss}");
                 Exit(0);
             }
             catch (Exception ex)
