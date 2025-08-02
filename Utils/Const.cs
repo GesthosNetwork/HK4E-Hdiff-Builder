@@ -162,7 +162,7 @@ namespace HK4E.HdiffBuilder.Utils
 
             if (ActiveGameRoot == null)
             {
-                Logger.Fatal($"None of the expected game folders found for versions {OldVer} and {NewVer}");
+                Logger.Error($"None of the expected game folders found for versions {OldVer} and {NewVer}");
                 Logger.Hint($"Make sure one of these folders exist: {string.Join(", ", GameRootDirs.Select(x => $"{x}_{OldVer}"))}");
                 PauseExit();
             }

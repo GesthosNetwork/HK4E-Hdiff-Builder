@@ -12,10 +12,10 @@ namespace HK4E.HdiffBuilder.Utils
 
         public static void Init()
         {
-            string baseName = "log";
+            string baseName = "debug";
             RotateLogs(baseName);
 
-            string logFilePath = $"{baseName}.txt";
+            string logFilePath = $"{baseName}.log";
 
             string? levelStr = Const.LogLevel?.Trim().ToUpperInvariant();
             DisableFileLogging = (levelStr == "NONE");
@@ -50,7 +50,7 @@ namespace HK4E.HdiffBuilder.Utils
         {
             try
             {
-                string todayPath = $"{baseName}.txt";
+                string todayPath = $"{baseName}.log";
                 if (!File.Exists(todayPath))
                     return;
 
@@ -59,15 +59,15 @@ namespace HK4E.HdiffBuilder.Utils
                     return;
 
                 int i = 1;
-                while (File.Exists($"{baseName}-{i}.txt"))
+                while (File.Exists($"{baseName}-{i}.log"))
                     i++;
 
                 for (int j = i - 1; j >= 1; j--)
                 {
-                    File.Move($"{baseName}-{j}.txt", $"{baseName}-{j + 1}.txt", overwrite: true);
+                    File.Move($"{baseName}-{j}.log", $"{baseName}-{j + 1}.log", overwrite: true);
                 }
 
-                File.Move(todayPath, $"{baseName}-1.txt", overwrite: true);
+                File.Move(todayPath, $"{baseName}-1.log", overwrite: true);
             }
             catch (Exception ex)
             {
