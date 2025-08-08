@@ -81,17 +81,14 @@ namespace HK4E.HdiffBuilder.Utils
         {
             return level switch
             {
-                "TRACE"     => LogEventLevel.Verbose,
                 "DEBUG"     => LogEventLevel.Debug,
                 "INFO"      => LogEventLevel.Information,
-                "NOTICE"    => LogEventLevel.Information,
                 "HINT"      => LogEventLevel.Information,
                 "DONE"      => LogEventLevel.Information,
                 "UPDATE"    => LogEventLevel.Information,
                 "FINISHED"  => LogEventLevel.Information,
                 "SKIP"      => LogEventLevel.Warning,
                 "WARN"      => LogEventLevel.Warning,
-                "WARNING"   => LogEventLevel.Warning,
                 "FAIL"      => LogEventLevel.Error,
                 "ERROR"     => LogEventLevel.Error,
                 "FATAL"     => LogEventLevel.Fatal,
@@ -102,11 +99,8 @@ namespace HK4E.HdiffBuilder.Utils
 
         private static bool IsRecognizedLogLevel(string? level)
         {
-            return level is "TRACE" or "DEBUG" or "INFO" or "NOTICE" or "HINT"
-                         or "DONE" or "UPDATE" or "FINISHED"
-                         or "SKIP" or "WARN" or "WARNING"
-                         or "FAIL" or "ERROR" or "FATAL"
-                         or "NONE";
+            return level is "DEBUG" or "INFO" or "HINT" or "DONE" or "UPDATE" or "FINISHED"
+                          or "SKIP" or "WARN" or "FAIL" or "ERROR" or "FATAL" or "NONE";
         }
 
         private static void LogWithTag(string tag, string message, LogEventLevel level, ConsoleColor color)
@@ -126,10 +120,8 @@ namespace HK4E.HdiffBuilder.Utils
             }
         }
 
-        public static void Trace(string message)     => LogWithTag("TRACE", message, LogEventLevel.Verbose, ConsoleColor.Gray);
         public static void Debug(string message)     => LogWithTag("DEBUG", message, LogEventLevel.Debug, ConsoleColor.DarkGray);
         public static void Info(string message)      => LogWithTag("INFO", message, LogEventLevel.Information, ConsoleColor.Blue);
-        public static void Notice(string message)    => LogWithTag("NOTICE", message, LogEventLevel.Information, ConsoleColor.Cyan);
         public static void Hint(string message)      => LogWithTag("HINT", message, LogEventLevel.Information, ConsoleColor.Yellow);
         public static void Update(string message)    => LogWithTag("UPDATE", message, LogEventLevel.Information, ConsoleColor.Green);
         public static void Done(string message)      => LogWithTag("DONE", message, LogEventLevel.Information, ConsoleColor.Green);

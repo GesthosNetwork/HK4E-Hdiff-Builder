@@ -12,11 +12,12 @@ namespace HK4E.HdiffBuilder.Core
             Logger.Info($"Checking deleted files between {Const.OldVer} -> {Const.NewVer}");
 
             var (updateFolder, outputAudio) = Const.GetDirs();
+            bool hasAnyDeleted = false;
 
             if (Const.RunGameDiff)
             {
                 var deleted = FindDeletedFiles(Const.OldBase, Const.NewBase, skipAudio: true);
-                SaveList(deleted, updateFolder);
+                hasAnyDeleted |= SaveList(deleted, updateFolder);
             }
 
             foreach (var lang in Const.AudioLanguages.Keys)
@@ -33,7 +34,7 @@ namespace HK4E.HdiffBuilder.Core
                     if (Directory.Exists(oldAssets))
                     {
                         var deleted = FindDeletedFiles(oldAssets, newAssets, prefixAssets);
-                        SaveList(deleted, outputAudio[lang]);
+                        hasAnyDeleted |= SaveList(deleted, outputAudio[lang]);
                     }
 
                     string oldGen = Path.Combine(Const.OldBase, gameDir, "StreamingAssets", "Audio", "GeneratedSoundBanks", "Windows", lang);
@@ -43,12 +44,15 @@ namespace HK4E.HdiffBuilder.Core
                     if (Directory.Exists(oldGen))
                     {
                         var deleted = FindDeletedFiles(oldGen, newGen, prefixGen);
-                        SaveList(deleted, outputAudio[lang]);
+                        hasAnyDeleted |= SaveList(deleted, outputAudio[lang]);
                     }
                 }
             }
 
-            Logger.Done("deletefiles.txt has been successfully generated.\n");
+            if (hasAnyDeleted)
+                Logger.Done("deletefiles.txt has been successfully generated.\n");
+            else
+                Logger.Skip("No deleted files detected. deletefiles.txt was not created because there were no differences.\n");
         }
 
         private static List<string> FindDeletedFiles(string oldRoot, string newRoot, string relPrefix = "", bool skipAudio = false)
@@ -64,22 +68,47 @@ namespace HK4E.HdiffBuilder.Core
                     continue;
 
                 string newPath = Path.Combine(newRoot, relPath);
-                if (!File.Exists(newPath))
+                if (!File.Exists(newPath) && !FileUtils.Ignore(fullRelPath))
                     deleted.Add(fullRelPath);
             }
 
             return deleted;
         }
 
-        private static void SaveList(List<string> list, string outputDir)
+        private static bool SaveList(List<string> list, string outputDir)
         {
             if (list.Count == 0)
-                return;
+                return false;
 
             Directory.CreateDirectory(outputDir);
             string outPath = Path.Combine(outputDir, "deletefiles.txt");
+
+            list.Sort((a, b) =>
+            {
+                int depthA = GetSlashCount(a);
+                int depthB = GetSlashCount(b);
+
+                if (depthA != depthB)
+                    return depthA.CompareTo(depthB);
+
+                return string.Compare(
+                    Path.GetFileName(a), 
+                    Path.GetFileName(b), 
+                    StringComparison.OrdinalIgnoreCase
+                );
+            });
+
             File.WriteAllLines(outPath, list);
             Logger.Info($"Create {outPath} ({list.Count} files)");
+            return true;
+        }
+
+        private static int GetSlashCount(string path)
+        {
+            int count = 0;
+            foreach (char c in path)
+                if (c == '/') count++;
+            return count;
         }
 
         private static bool IsAudio(string relPath)

@@ -35,8 +35,7 @@ namespace HK4E.HdiffBuilder.Utils
 
         public static readonly HashSet<string> VersionWhitelist = new()
         {
-            "0.7.0", "0.7.1", "1.0.1", "1.3.1", "1.3.2",
-            "1.4.1", "1.5.1", "1.6.1", "4.0.1"
+            "0.7.0", "0.7.1", "1.0.1", "1.3.1", "1.3.2", "1.4.1", "1.5.1", "1.6.1", "4.0.1"
         };
 
         public static string OldBase => $"{ActiveGameRoot}_{OldVer}";

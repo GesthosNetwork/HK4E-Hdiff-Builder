@@ -21,8 +21,7 @@ namespace HK4E.HdiffBuilder.Utils
 
         private static readonly HashSet<string> IgnoreDirs = new()
         {
-            "SDKCaches", "webCaches", "Persistent",
-            "SDK", "LauncherPlugins", "blob_storage", "ldiff"
+            "SDKCaches", "webCaches", "Persistent", "SDK", "LauncherPlugins", "blob_storage", "ldiff"
         };
 
         private static bool VersionIsAtLeast(string ver, int x, int y, int z)
@@ -49,15 +48,9 @@ namespace HK4E.HdiffBuilder.Utils
 
             if (ext == ".pck")
             {
-                if (basename.StartsWith("SFX_") || basename.StartsWith("Music_"))
+                if (VersionIsAtLeast(Const.NewVer, 2, 7, 0))
                 {
-                    Logger.Skip($"Ignored file by prefix rule: {basename}");
-                    return true;
-                }
-
-                if (basename.StartsWith("VO_"))
-                {
-                    if (VersionIsAtLeast(Const.NewVer, 2, 7, 0))
+                    if (basename.StartsWith("VO_") || basename.StartsWith("SFX_") || basename.StartsWith("Music_"))
                     {
                         Logger.Skip($"Ignored file by prefix rule: {basename}");
                         return true;

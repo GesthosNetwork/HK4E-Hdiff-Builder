@@ -155,9 +155,12 @@ namespace HK4E.HdiffBuilder.Core
                     string outTxt = Path.Combine(outputRoot, "hdifffiles.txt");
                     try
                     {
-                        using var writer = new StreamWriter(outTxt, false, Encoding.UTF8);
+                        using var writer = new StreamWriter(outTxt, false, new UTF8Encoding(false));
                         foreach (var entry in results)
-                            writer.WriteLine(JsonSerializer.Serialize(entry));
+                        {
+                            if (entry.TryGetValue("remoteName", out var value))
+                                writer.WriteLine($"{{\"remoteName\": \"{value}\"}}");
+                        }
                         Logger.Info($"Wrote: {outTxt}");
                     }
                     catch (Exception e)
