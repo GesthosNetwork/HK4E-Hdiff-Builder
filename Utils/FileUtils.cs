@@ -9,6 +9,11 @@ namespace HK4E.HdiffBuilder.Utils
 {
     public static class FileUtils
     {
+        private static readonly HashSet<string> WhiteListFiles = new()
+        {
+            "plugindelayed.config"
+        };
+
         private static readonly HashSet<string> IgnoreFiles = new()
         {
             "config.ini", "vulkan_gpu_list_config.txt", "version.dll"
@@ -21,7 +26,7 @@ namespace HK4E.HdiffBuilder.Utils
 
         private static readonly HashSet<string> IgnoreDirs = new()
         {
-            "SDKCaches", "webCaches", "Persistent", "SDK", "LauncherPlugins", "blob_storage", "ldiff"
+            "SDKCaches", "webCaches", "Persistent", "SDK", "LauncherPlugins", "blob_storage", "GPUCache", "ldiff"
         };
 
         private static bool VersionIsAtLeast(string ver, int x, int y, int z)
@@ -45,6 +50,12 @@ namespace HK4E.HdiffBuilder.Utils
             string basename = Path.GetFileName(path);
             string ext = Path.GetExtension(basename);
             string[] parts = path.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (WhiteListFiles.Contains(basename))
+            {
+                Logger.Skip($"Whitelisted file: {basename}");
+                return false;
+            }
 
             if (ext == ".pck")
             {

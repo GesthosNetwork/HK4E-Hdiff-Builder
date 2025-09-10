@@ -35,7 +35,7 @@ namespace HK4E.HdiffBuilder.Utils
 
         public static readonly HashSet<string> VersionWhitelist = new()
         {
-            "0.7.0", "0.7.1", "1.0.1", "1.3.1", "1.3.2", "1.4.1", "1.5.1", "1.6.1", "4.0.1"
+            "0.7.0", "0.7.1", "1.0.90", "1.0.91", "1.0.92", "1.0.1", "1.3.1", "1.3.2", "1.4.1", "1.5.1", "1.6.1", "4.0.1"
         };
 
         public static string OldBase => $"{ActiveGameRoot}_{OldVer}";
@@ -51,8 +51,8 @@ namespace HK4E.HdiffBuilder.Utils
 
             var defaultConfig = new Dictionary<string, object>
             {
-                ["old_ver"]           = "5.5.0",
-                ["new_ver"]           = "5.6.0",
+                ["old_ver"]           = "5.8.0",
+                ["new_ver"]           = "6.0.0",
                 ["mode"]              = 0,
                 ["max_threads"]       = logicalCoreCount,
                 ["keep_source_folder"] = false,
