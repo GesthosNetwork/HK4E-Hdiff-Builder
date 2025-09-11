@@ -21,7 +21,7 @@ A tool to generate hdiff update files between two versions of an Anime Game. Thi
 ├── GenshinImpact_6.0.0/                  ← New version folder  
 ├── hdiffbuilder.exe                      ← Main executable  
 ├── config.json                           ← Execution config  
-├── game_5.8.0_5.6.0_hdiff.7z             ← Patch output  
+├── game_5.8.0_6.0.0_hdiff.7z             ← Patch output  
 ├── audio_en-us_5.8.0_6.0.0_hdiff.7z      ← Patch output  
 ├── audio_ja-jp_5.8.0_6.0.0_hdiff.7z      ← Patch output  
 ├── audio_ko-kr_5.8.0_6.0.0_hdiff.7z      ← Patch output  
