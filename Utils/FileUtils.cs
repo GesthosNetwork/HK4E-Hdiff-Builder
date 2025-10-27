@@ -16,7 +16,7 @@ namespace HK4E.HdiffBuilder.Utils
 
         private static readonly HashSet<string> IgnoreFiles = new()
         {
-            "config.ini", "vulkan_gpu_list_config.txt", "version.dll"
+            "config.ini", "vulkan_gpu_list_config.txt", "version.dll", "beyond_pkg_version"
         };
 
         private static readonly HashSet<string> IgnoreExtensions = new()
@@ -26,7 +26,7 @@ namespace HK4E.HdiffBuilder.Utils
 
         private static readonly HashSet<string> IgnoreDirs = new()
         {
-            "SDKCaches", "webCaches", "Persistent", "SDK", "LauncherPlugins", "blob_storage", "GPUCache", "ldiff"
+            "SDKCaches", "webCaches", "Persistent", "SDK", "LauncherPlugins", "blob_storage", "GPUCache", "ldiff", "Log", "BeyondAssets"
         };
 
         private static bool VersionIsAtLeast(string ver, int x, int y, int z)

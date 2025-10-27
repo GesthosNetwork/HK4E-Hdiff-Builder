@@ -42,6 +42,7 @@ namespace HK4E.HdiffBuilder.Utils
         public static string NewBase => $"{ActiveGameRoot}_{NewVer}";
 
         public static bool RunGameDiff = true;
+        public static bool AggressiveMode = false;
         public static readonly Dictionary<string, bool> RunAudioDiff = new();
 
         #nullable disable
@@ -51,17 +52,18 @@ namespace HK4E.HdiffBuilder.Utils
 
             var defaultConfig = new Dictionary<string, object>
             {
-                ["old_ver"]           = "5.8.0",
-                ["new_ver"]           = "6.0.0",
-                ["mode"]              = 0,
-                ["max_threads"]       = logicalCoreCount,
+                ["old_ver"]        = "6.0.0",
+                ["new_ver"]        = "6.1.0",
+                ["mode"]           = 0,
+                ["max_threads"]    = logicalCoreCount,
                 ["keep_source_folder"] = false,
-                ["log_level"]         = "DEBUG",
-                ["game"]              = true,
-                ["audio_en-us"]       = true,
-                ["audio_ja-jp"]       = true,
-                ["audio_ko-kr"]       = true,
-                ["audio_zh-cn"]       = true
+                ["aggressive_mode"] = false,
+                ["log_level"]      = "DEBUG",
+                ["game"]           = true,
+                ["audio_en-us"]    = true,
+                ["audio_ja-jp"]    = true,
+                ["audio_ko-kr"]    = true,
+                ["audio_zh-cn"]    = true
             };
 
             if (!File.Exists(ConfigPath))
@@ -168,6 +170,24 @@ namespace HK4E.HdiffBuilder.Utils
 
             RunGameDiff = config.TryGetValue("game", out var gameVal) && gameVal.ValueKind == JsonValueKind.True;
 
+            bool hasAggrKey = config.TryGetValue("aggressive_mode", out var aggrVal);
+            AggressiveMode = hasAggrKey && aggrVal.ValueKind == JsonValueKind.True;
+
+            if (!hasAggrKey)
+            {
+                var match = Regex.Match(NewVer, @"^(\d+)\.(\d+)\.(\d+)$");
+                if (match.Success)
+                {
+                    int major = int.Parse(match.Groups[1].Value);
+                    int minor = int.Parse(match.Groups[2].Value);
+                    if (major > 6 || (major == 6 && minor >= 0))
+                    {
+                        AggressiveMode = true;
+                        Logger.Info($"Auto-enabled Aggressive Mode (game version >= 6.0.0)");
+                    }
+                }
+            }
+
             foreach (var pair in AudioLanguages)
             {
                 string key = pair.Value;
@@ -238,32 +258,6 @@ namespace HK4E.HdiffBuilder.Utils
             if (VersionWhitelist.Contains(full))
                 return Tuple.Create(x, y, z);
 
-            if (x == 0)
-            {
-                if (y == 9)
-                {
-                    if (z < 0 || z > 20)
-                        errors.Add($"Invalid version '{ver}' not allowed.");
-                }
-                else if (y != 7)
-                {
-                    errors.Add($"Invalid version '{ver}' not allowed.");
-                }
-            }
-            else if (x == 1)
-            {
-                if (y < 0 || y > 6)
-                    errors.Add($"Invalid version '{ver}' not allowed.");
-            }
-            else
-            {
-                if (y > 8)
-                    errors.Add($"Invalid version '{ver}' not allowed.");
-            }
-
-            if (!(x == 0 && y == 9) && !new HashSet<int> { 0, 50, 51, 52, 53, 54, 55 }.Contains(z))
-                errors.Add($"Invalid version '{ver}' not allowed.");
-
             return Tuple.Create(x, y, z);
         }
 
@@ -271,10 +265,8 @@ namespace HK4E.HdiffBuilder.Utils
         {
             int cmp = a.Item1.CompareTo(b.Item1);
             if (cmp != 0) return cmp;
-
             cmp = a.Item2.CompareTo(b.Item2);
             if (cmp != 0) return cmp;
-
             return a.Item3.CompareTo(b.Item3);
         }
 

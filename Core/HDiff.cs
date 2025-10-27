@@ -81,6 +81,10 @@ namespace HK4E.HdiffBuilder.Core
                     MakeHdiff(resolvedOld, newFile, hdiffFile);
                     try
                     {
+                        var fileInfo = new FileInfo(newFile);
+                        if (fileInfo.IsReadOnly)
+                            fileInfo.IsReadOnly = false;
+
                         File.Delete(newFile);
                         Logger.Info($"{hdiffFile} + deleted {Path.GetFileName(newFile)}");
                     }
@@ -97,20 +101,25 @@ namespace HK4E.HdiffBuilder.Core
                 }
             }
 
-            void ScanAndProcess(string updateRoot, string oldRoot, string remotePrefix, string outputRoot, string? relBase = null)
+            void ScanAndProcess(string updateRoot, string oldRoot, string remotePrefix, string outputRoot, Func<string,bool>? filter = null, string? relBase = null)
             {
                 if (!Directory.Exists(updateRoot))
                     return;
 
+                filter ??= _ => true;
+                relBase ??= updateRoot;
+
                 List<Dictionary<string, string>> results = new();
                 List<Task<Dictionary<string, string>>> tasks = new();
-                relBase ??= updateRoot;
 
                 if (Const.Mode == 1)
                 {
                     SemaphoreSlim concurrency = new(Const.MaxThreads);
-                    foreach (string file in Directory.EnumerateFiles(updateRoot, "*.pck", SearchOption.AllDirectories))
+                    foreach (string file in Directory.EnumerateFiles(updateRoot, "*", SearchOption.AllDirectories))
                     {
+                        if (!filter(file))
+                            continue;
+
                         string relPath = Path.GetRelativePath(relBase, file).Replace("\\", "/");
                         string remoteName = Path.Combine(remotePrefix, relPath).Replace("\\", "/");
                         string defaultOldFile = Path.Combine(oldRoot, relPath);
@@ -137,8 +146,11 @@ namespace HK4E.HdiffBuilder.Core
                 }
                 else
                 {
-                    foreach (string file in Directory.EnumerateFiles(updateRoot, "*.pck", SearchOption.AllDirectories))
+                    foreach (string file in Directory.EnumerateFiles(updateRoot, "*", SearchOption.AllDirectories))
                     {
+                        if (!filter(file))
+                            continue;
+
                         string relPath = Path.GetRelativePath(relBase, file).Replace("\\", "/");
                         string remoteName = Path.Combine(remotePrefix, relPath).Replace("\\", "/");
                         string defaultOldFile = Path.Combine(oldRoot, relPath);
@@ -202,22 +214,49 @@ namespace HK4E.HdiffBuilder.Core
                 return Path.Combine(basePath, gameDataDir, "StreamingAssets", "AudioAssets", langKey);
             }
 
-            Logger.Info("HDIFF .pck process started...");
+            Logger.Info("HDIFF process started...");
             var start = DateTime.Now;
 
-            if (Const.RunGameDiff)
+            if (Const.AggressiveMode)
             {
-                foreach (var gameDir in Const.GameDataDirs)
-                {
-                    var root1 = Path.Combine(updateFolder, gameDir, "StreamingAssets", "AudioAssets");
-                    var old1 = Path.Combine(Const.OldBase, gameDir, "StreamingAssets", "AudioAssets");
-                    if (Directory.Exists(root1))
-                        ScanAndProcess(root1, old1, $"{gameDir}/StreamingAssets/AudioAssets", updateFolder, root1);
+                Logger.Info("Aggressive Mode On.");
+                ScanAndProcess(
+                    updateFolder,
+                    Const.OldBase,
+                    "",
+                    updateFolder,
+                    file =>
+                    {
+                        string rel = Path.GetRelativePath(updateFolder, file).Replace("\\", "/");
 
-                    var root2 = Path.Combine(updateFolder, gameDir, "StreamingAssets", "Audio", "GeneratedSoundBanks", "Windows");
-                    var old2 = Path.Combine(Const.OldBase, gameDir, "StreamingAssets", "Audio", "GeneratedSoundBanks", "Windows");
+                        foreach (var lang in Const.AudioLanguages.Values)
+                        {
+                            if (rel.Contains($"Audio/GeneratedSoundBanks/{lang}", StringComparison.OrdinalIgnoreCase))
+                                return false;
+                        }
+
+                        return true;
+                    });
+            }
+            else if (Const.RunGameDiff)
+            {
+                foreach (var dir in Const.GameDataDirs)
+                {
+                    string rootNew = Path.Combine(updateFolder, dir);
+                    string rootOld = Path.Combine(Const.OldBase, dir);
+
+                    if (!Directory.Exists(rootNew))
+                        continue;
+
+                    var root1 = Path.Combine(rootNew, "StreamingAssets", "AudioAssets");
+                    var old1 = Path.Combine(rootOld, "StreamingAssets", "AudioAssets");
+                    if (Directory.Exists(root1))
+                        ScanAndProcess(root1, old1, $"{dir}/StreamingAssets/AudioAssets", updateFolder, file => file.EndsWith(".pck", StringComparison.OrdinalIgnoreCase));
+
+                    var root2 = Path.Combine(rootNew, "StreamingAssets", "Audio", "GeneratedSoundBanks", "Windows");
+                    var old2 = Path.Combine(rootOld, "StreamingAssets", "Audio", "GeneratedSoundBanks", "Windows");
                     if (Directory.Exists(root2))
-                        ScanAndProcess(root2, old2, $"{gameDir}/StreamingAssets/Audio/GeneratedSoundBanks/Windows", updateFolder, root2);
+                        ScanAndProcess(root2, old2, $"{dir}/StreamingAssets/Audio/GeneratedSoundBanks/Windows", updateFolder, file => file.EndsWith(".pck", StringComparison.OrdinalIgnoreCase));
                 }
             }
 
@@ -239,9 +278,9 @@ namespace HK4E.HdiffBuilder.Core
 
                 string updateRoot = isAssets
                     ? Path.Combine(updBase, gameDataDir, "StreamingAssets", "AudioAssets", lang)
-                    : Path.Combine(updBase, gameDataDir, "StreamingAssets", "Audio", "GeneratedSoundBanks", "Windows", lang);
+                    : Path.Combine(updBase, gameDataDir, "StreamingAssets", "Audio", "GeneratedSoundBanks/Windows", lang);
 
-                ScanAndProcess(updateRoot, oldAudioDir, remotePrefix, updBase, updateRoot);
+                ScanAndProcess(updateRoot, oldAudioDir, remotePrefix, updBase, file => file.EndsWith(".pck", StringComparison.OrdinalIgnoreCase), updateRoot);
             }
 
             var elapsed = DateTime.Now - start;

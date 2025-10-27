@@ -37,6 +37,44 @@ namespace HK4E.HdiffBuilder.Core
                 folders[folderName] = folderName + ".7z";
             }
 
+            try
+            {
+                string newBase = NewBase;
+                string beyondAssetsDir = Path.Combine(newBase, "BeyondAssets");
+                string beyondPkgFile = Path.Combine(newBase, "beyond_pkg_version");
+
+                if (Directory.Exists(beyondAssetsDir) && File.Exists(beyondPkgFile))
+                {
+                    string regionSuffix = ActiveGameRoot switch
+                    {
+                        "YuanShen" => "CN",
+                        "GenshinImpact" or "Genshin" => "OS",
+                        _ => "OS"
+                    };
+
+                    string bundleName = $"BeyondAssets_{regionSuffix}_{newVer}.7z";
+                    string tempFolder = Path.Combine(Environment.CurrentDirectory, $"BeyondAssets_{regionSuffix}_{newVer}_temp");
+
+                    if (Directory.Exists(tempFolder))
+                        Directory.Delete(tempFolder, true);
+                    Directory.CreateDirectory(tempFolder);
+
+                    DirectoryCopy(beyondAssetsDir, Path.Combine(tempFolder, "BeyondAssets"), true);
+                    File.Copy(beyondPkgFile, Path.Combine(tempFolder, "beyond_pkg_version"));
+
+                    folders[tempFolder] = bundleName;
+                    Logger.Info($"Added BeyondAssets task.");
+                }
+                else
+                {
+                    Logger.Warning($"BeyondAssets folder or beyond_pkg_version not found in {newBase}, skipped task.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to prepare BeyondAssets task: {ex.Message}");
+            }
+
             if (folders.Count == 0)
             {
                 Logger.Warning("No diff folders selected for compression (based on config.json).");
@@ -110,9 +148,7 @@ namespace HK4E.HdiffBuilder.Core
             if (mode == 0)
             {
                 foreach (var entry in folders)
-                {
                     CompressFolder(entry.Key, entry.Value);
-                }
             }
             else
             {
@@ -134,6 +170,30 @@ namespace HK4E.HdiffBuilder.Core
                     }));
                 }
                 Task.WaitAll(tasks.ToArray());
+            }
+        }
+
+        private static void DirectoryCopy(string sourceDir, string destDir, bool copySubDirs)
+        {
+            DirectoryInfo dir = new DirectoryInfo(sourceDir);
+            if (!dir.Exists)
+                throw new DirectoryNotFoundException($"Source directory does not exist: {sourceDir}");
+
+            Directory.CreateDirectory(destDir);
+
+            foreach (FileInfo file in dir.GetFiles())
+            {
+                string temppath = Path.Combine(destDir, file.Name);
+                file.CopyTo(temppath, false);
+            }
+
+            if (copySubDirs)
+            {
+                foreach (DirectoryInfo subdir in dir.GetDirectories())
+                {
+                    string temppath = Path.Combine(destDir, subdir.Name);
+                    DirectoryCopy(subdir.FullName, temppath, true);
+                }
             }
         }
     }
