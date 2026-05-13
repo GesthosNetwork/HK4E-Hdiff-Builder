@@ -16,17 +16,18 @@ namespace HK4E.HdiffBuilder.Utils
 
         private static readonly HashSet<string> IgnoreFiles = new()
         {
-            "config.ini", "vulkan_gpu_list_config.txt", "version.dll", "beyond_pkg_version"
+            "config.ini", "version.dll", "beyond_pkg_version", "imgui.ini", "config.cfg"
         };
 
         private static readonly HashSet<string> IgnoreExtensions = new()
         {
-            ".log", ".dmp", ".bak"
+            ".log", ".dmp", ".bak", ".temp", ".tmp", ".backup", ".patch", ".bat", ".zip", ".rar", ".7z"
         };
 
         private static readonly HashSet<string> IgnoreDirs = new()
         {
-            "SDKCaches", "webCaches", "Persistent", "SDK", "LauncherPlugins", "blob_storage", "GPUCache", "ldiff", "Log", "BeyondAssets"
+            "SDKCaches", "webCaches", "Persistent", "SDK", "LauncherPlugins", "blob_storage",
+			"Rp", "GPUCache", "ldiff", "Log", "BeyondAssets", ".patch_cache"
         };
 
         private static bool VersionIsAtLeast(string ver, int x, int y, int z)
@@ -59,7 +60,7 @@ namespace HK4E.HdiffBuilder.Utils
 
             if (ext == ".pck")
             {
-                if (VersionIsAtLeast(Const.NewVer, 2, 7, 0))
+                if (VersionIsAtLeast(Const.NewVer, 2, 8, 0))
                 {
                     if (basename.StartsWith("VO_") || basename.StartsWith("SFX_") || basename.StartsWith("Music_"))
                     {

@@ -17,16 +17,16 @@ A tool to generate hdiff update files between two versions of an Anime Game. Thi
 
 ```
 /your-root-folder/  
-├── GenshinImpact_6.0.0/                  ← Old version folder  
-├── GenshinImpact_6.1.0/                  ← New version folder  
+├── GenshinImpact_6.4.0/                  ← Old version folder  
+├── GenshinImpact_6.5.0/                  ← New version folder  
 ├── hdiffbuilder.exe                      ← Main executable  
 ├── config.json                           ← Execution config  
-├── game_6.0.0_6.1.0_hdiff.7z             ← Patch output  
-├── audio_en-us_6.0.0_6.1.0_hdiff.7z      ← Patch output  
-├── audio_ja-jp_6.0.0_6.1.0_hdiff.7z      ← Patch output  
-├── audio_ko-kr_6.0.0_6.1.0_hdiff.7z      ← Patch output  
-├── audio_zh-cn_6.0.0_6.1.0_hdiff.7z      ← Patch output
-└── BeyondAssets_OS_6.1.0.7z              ← Patch output
+├── game_6.4.0_6.5.0_hdiff.7z             ← Patch output  
+├── audio_en-us_6.4.0_6.5.0_hdiff.7z      ← Patch output  
+├── audio_ja-jp_6.4.0_6.5.0_hdiff.7z      ← Patch output  
+├── audio_ko-kr_6.4.0_6.5.0_hdiff.7z      ← Patch output  
+├── audio_zh-cn_6.4.0_6.5.0_hdiff.7z      ← Patch output
+└── BeyondAssets_OS_6.5.0.7z              ← Patch output
 ```
 
 Also, you can use YuanShen.
@@ -36,8 +36,8 @@ Also, you can use YuanShen.
 
 ```
 {
-  "old_ver": "6.0.0",
-  "new_ver": "6.1.0",
+  "old_ver": "6.4.0",
+  "new_ver": "6.5.0",
   "mode": 0,
   "max_threads": 4,
   "keep_source_folder": true,
@@ -53,8 +53,8 @@ Also, you can use YuanShen.
 
 | Parameter             | Type    | Description                                                                 |
 |-----------------------|---------|-----------------------------------------------------------------------------|
-| `old_ver`             | string  | Old version (folder must exist, e.g. `GenshinImpact_6.0.0`)                 |
-| `new_ver`             | string  | New version (folder must exist, e.g. `GenshinImpact_6.1.0`)                 |
+| `old_ver`             | string  | Old version (folder must exist, e.g. `GenshinImpact_6.4.0`)                 |
+| `new_ver`             | string  | New version (folder must exist, e.g. `GenshinImpact_6.5.0`)                 |
 | `mode`                | int     | 0 = sequential execution, 1 = parallel execution                            |
 | `max_threads`         | int     | Maximum worker threads (1 to number of CPU cores)                           |
 | `keep_source_folder`  | bool    | If true, retains original version folders after patching                    |
@@ -80,7 +80,7 @@ Also, you can use YuanShen.
 
 ## Build Instructions
 
-1. Install [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)  
+1. Install [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)  
 2. Run `compile.bat`  
 3. Output will be in `bin/hdiffbuilder.exe`
 

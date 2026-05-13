@@ -7,7 +7,7 @@ namespace HK4E.HdiffBuilder.Utils
     internal static class SystemTasks
     {
         private static readonly byte[] ExpectedHash = Convert.FromHexString(
-            "C0B503B265B85F0940C809D04B20313E72D2188FE10037426B8A89EAE6C29E59"
+            "29BA78416F75A656D31FCE6442AB8D4ADB13B62D55D1F10A9F3D49BB58CC6232"
         );
 
         public static void A05xF()
